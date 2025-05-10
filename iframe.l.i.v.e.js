@@ -147,17 +147,80 @@ function responseWithHeaders(response) {
     });
   return newResponse;
 }
+  
+var publicKey;
 
 /**
  * @param {MessageEvent} e
  */
-function handlePostMessage(e) {
-  const tag = e.data?.execute?.tag;
-  const script = e.data?.execute?.script;
-  const origin = e.data?.execute?.origin;
-  const source = e.source;
+async function handlePostMessage(e) {
+  let result = {};
 
-  if (!tag || !script || !source) return;
+  if (e.data?.init)
+    result = { ...await handleInit(e.data.init) };
+
+  if (!publicKey) {
+    publicKey = localStorage.getItem('parent_publicKey');
+    if (!publicKey) {
+      console.error('MESSAGES NOT ALLOWED WITHOUT PUBLIC KEY NEGOTIATION ', e.data);
+      return;
+    }
+  }
+
+  const executePromise = e.data?.execute && handleExecute(e.data.execute, e.source);
+  const filesPromise = e.data?.files && handleFiles(e.data.files);
+
+  result = {
+    ...result,
+    ...await executePromise,
+    ...await filesPromise
+  };
+
+  e.source?.postMessage(
+    result,
+    { targetOrigin: e.origin });
+}
+  
+async function handleInit({ publicKey }) {
+  const hashStr = location.hostname.replace(/\-ifrwrk\..+$/, '').toLowerCase();
+  const publicKeyObj = await importAndVerifyPublicKey(publicKey, hashStr);
+  if (!publicKeyObj) {
+    console.error('Public key verification failed. ', publicKey, hashStr);
+    throw new Error('Public key verification failed.');
+  }
+
+  localStorage.setItem('parent_publicKey', publicKey);
+  return { initSuccess: { publicKey: hashStr } };
+}
+  
+function verifySignature(str, signature, publicKey) {
+  const dataBuffer = new TextEncoder().encode(str);
+  const verified = crypto.subtle.verify({ name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, publicKey, signature, dataBuffer);    
+  if (!verified) {
+    console.error('Signature verification failed. ', str, signature);
+    throw new Error('Signature verification failed.');
+  }
+}
+  
+async function importAndVerifyPublicKey(publicStr, hashString) {
+  const publicKeyBuffer = Uint8Array.from(atob(publicStr), c => c.charCodeAt(0)).buffer;
+  const algorithm = {
+    name: "RSASSA-PKCS1-v1_5",
+    hash: "SHA-256",
+  };
+  const publicKey = await crypto.subtle.importKey('spki', publicKeyBuffer, algorithm, true, ['verify']);
+
+  const publicKeySpki = await crypto.subtle.exportKey('spki', publicKey);
+  const publicKeyDigest = await crypto.subtle.digest('SHA-256', publicKeySpki);
+  const calculatedHash = [...new Uint8Array(publicKeyDigest)].map(b => b.toString(36)).join('').toLowerCase();
+
+  if (calculatedHash.startsWith(hashString)) return publicKey;
+}
+  
+async function handleExecute({ tag, script, origin, signature }, source) {
+  if (!tag || !script || !source || !signature) return;
+
+  await verifySignature(script, signature, publicKey);
 
   source.postMessage(
     { executeStart: { tag } },
@@ -177,20 +240,65 @@ function handlePostMessage(e) {
         return;
       }
 
-      source.postMessage(
-        {
-          executeSuccess: { tag, result: JSON.stringify(result) }
-        },
-        origin);
+      return {
+        executeSuccess: { tag, result: JSON.stringify(result) }
+      };
     } catch (biggerError) {
-      source.postMessage(
-        {
-          executeError: { tag, error: String(biggerError) }
-        },
-        origin);
+      return {
+        executeError: { tag, error: String(biggerError) }
+      };
     }
   })();
 }
+  
+async function handleFiles({ tag, files, signature }, source) {
+
+  if (!files || !source || !signature) return;
+
+  await verifySignature(JSON.stringify(files), signature, publicKey);
+
+  // TODO: add the counts for successes/failures
+  return { filesApplied: { tag } };
+}
+
+// const HASH_CHAR_LENGTH = 8;
+
+// async function generateSigningKeyPair() {
+//   const algorithm = {
+//     name: "RSASSA-PKCS1-v1_5",
+//     modulusLength: 2048,
+//     publicExponent: new Uint8Array([1, 0, 1]),
+//     hash: "SHA-256",
+//   };
+//   const keyPair = await crypto.subtle.generateKey(algorithm, true, ["sign", "verify"]);
+
+//   const publicKeySpki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+//   const publicStr = btoa(String.fromCharCode.apply(null, new Uint8Array(publicKeySpki)));
+
+//   const publicKeyDigest = await crypto.subtle.digest('SHA-256', publicKeySpki);
+//   const publicHash = [...new Uint8Array(publicKeyDigest)].map(b => b.toString(36)).join('').slice(0, HASH_CHAR_LENGTH);
+
+//   return { publicStr, publicHash, privateKey: keyPair.privateKey };
+// }
+
+// async function signData(privateKey, str) {
+//   return crypto.subtle.sign({ name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, privateKey, new TextEncoder().encode(str));
+// }
+
+// async function importAndVerifyPublicKey(publicStr, hashString) {
+//   const publicKeyBuffer = Uint8Array.from(atob(publicStr), c => c.charCodeAt(0)).buffer;
+//   const algorithm = {
+//     name: "RSASSA-PKCS1-v1_5",
+//     hash: "SHA-256",
+//   };
+//   const publicKey = await crypto.subtle.importKey('spki', publicKeyBuffer, algorithm, true, ['verify']);
+
+// }
+
+// async function verifySignature(publicKey, signature, str) {
+//   const dataBuffer = new TextEncoder().encode(str);
+//   return crypto.subtle.verify({ name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, publicKey, signature, dataBuffer);
+// }
 
 boot();
 
