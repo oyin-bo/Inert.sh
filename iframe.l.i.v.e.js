@@ -3,7 +3,7 @@
 
 (function () {
 
-var version = '0.10';
+var version = '0.11';
 
 function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
@@ -60,7 +60,7 @@ async function bootInteractiveApp() {
   function printOut(msg) {
     const msgEl = document.createElement('pre');
     msgEl.textContent = msg;
-    if (anchorBottom) document.body.insertBefore(anchorBottom, msgEl);
+    if (anchorBottom) document.body.insertBefore(msgEl, anchorBottom);
     else document.body.appendChild(msgEl);
   }
 
@@ -134,7 +134,7 @@ async function bootInteractiveApp() {
     const scriptText = document.createElement('pre');
     scriptText.style.fontWeight = 'bold';
     scriptText.textContent = '> ' + inputText + '\n...';
-    document.body.insertBefore(input, scriptText);
+    document.body.insertBefore(scriptText, input);
 
     const result = await new Promise((resolve) => {
       const executeTag = 'EXECUTE' + Date.now();
