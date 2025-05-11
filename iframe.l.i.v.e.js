@@ -4,6 +4,7 @@
 (function () {
 
 function boot() {
+  console.log('V0.1');
 
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
   const isIFRAMEWorker = isBrowser && typeof location !== 'undefined' && location?.host?.indexOf('-ifrwrk.') >= 0;
