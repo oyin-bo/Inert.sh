@@ -3,7 +3,7 @@
 
 (function () {
 
-var version = '0.12';
+var version = '0.13';
 
 function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
@@ -140,7 +140,7 @@ async function bootInteractiveApp() {
     scriptText.textContent = '> ' + inputText + '\n...';
     document.body.insertBefore(scriptText, input);
 
-    const result = await new Promise((resolve) => {
+    const result = await new Promise(async (resolve) => {
       const executeTag = 'EXECUTE' + Date.now();
       iframe.contentWindow?.postMessage(
         {
@@ -148,7 +148,7 @@ async function bootInteractiveApp() {
           execute: {
             script: inputText,
             origin: location.origin,
-            signature: signData(privateKey, inputText)
+            signature: await signData(privateKey, inputText)
           }
         },
         iframeSrc);
