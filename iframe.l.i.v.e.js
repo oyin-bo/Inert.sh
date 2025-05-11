@@ -3,7 +3,7 @@
 
 (function () {
 
-var version = '0.11';
+var version = '0.12';
 
 function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
@@ -54,6 +54,10 @@ async function bootInteractiveApp() {
     const publicHash = [...new Uint8Array(publicKeyDigest)].map(b => b.toString(36)).join('').slice(0, HASH_CHAR_LENGTH);
 
     return { publicStr, publicHash, privateKey: keyPair.privateKey };
+  }
+
+  async function signData(privateKey, str) {
+    return crypto.subtle.sign({ name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, privateKey, new TextEncoder().encode(str));
   }
 
   var anchorBottom;
@@ -143,7 +147,8 @@ async function bootInteractiveApp() {
           tag: executeTag,
           execute: {
             script: inputText,
-            origin: location.origin
+            origin: location.origin,
+            signature: signData(privateKey, inputText)
           }
         },
         iframeSrc);
@@ -291,7 +296,7 @@ async function handlePostMessage(e) {
     }
   }
 
-  const executePromise = e.data?.execute && handleExecute(e.data.execute, e.source);
+  const executePromise = e.data?.execute && handleExecute({ tag: e.data.tag, ...e.data.execute }, e.source);
   const filesPromise = e.data?.files && handleFiles(e.data.files);
 
   result = {
