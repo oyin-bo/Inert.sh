@@ -3,7 +3,7 @@
 
 (function () {
 
-var version = '0.6';
+var version = '0.7';
 
 function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
@@ -73,7 +73,7 @@ async function bootInteractiveApp() {
   const iframe = document.createElement('iframe');
   const iframeSrc = 'https://' + publicHash + '-ifrwrk.' + location.host;
   iframe.src = iframeSrc;
-  iframe.style.cssText = 'width: 20px; height: 20px; border: none; position: absolute; top: -10px; right: -10px; opacity: 0.01; pointer-events: none; z-index: -1;';
+  iframe.style.cssText = 'width: 20px; height: 20px; border: none; position: absolute; top: -10px; left: -10px; opacity: 0.01; pointer-events: none; z-index: -1;';
 
   /** @type {Promise<void>} */
   const frameLoaded = new Promise((resolve) => {
@@ -86,6 +86,8 @@ async function bootInteractiveApp() {
       iframe.onload = null;
       printOut('IFRAME channel negotiation...');
       const initTag = 'INIT' + Date.now();
+      window.addEventListener('message', handleIFRAMEMessage);
+
       iframe.contentWindow?.postMessage(
         {
           tag: initTag,
@@ -95,8 +97,6 @@ async function bootInteractiveApp() {
           }
         },
         iframeSrc);
-      
-      window.addEventListener('message', handleIFRAMEMessage);
 
       function handleIFRAMEMessage(e) {
         if (e.data?.tag === initTag) {
