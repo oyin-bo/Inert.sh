@@ -3,7 +3,7 @@
 
 (function () {
 
-var version = '0.7';
+var version = '0.8';
 
 function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
@@ -296,6 +296,7 @@ async function handlePostMessage(e) {
   const filesPromise = e.data?.files && handleFiles(e.data.files);
 
   result = {
+    tag: e.data?.tag,
     ...result,
     ...await executePromise,
     ...await filesPromise
