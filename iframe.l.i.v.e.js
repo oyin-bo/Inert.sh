@@ -10,9 +10,8 @@ function boot() {
   const isIFRAMEWorker = isBrowser && typeof location !== 'undefined' && location?.host?.indexOf('-ifrwrk.') >= 0;
   const isServiceWorker = typeof self !== 'undefined' && self.constructor?.name === 'ServiceWorkerGlobalScope';
 
-  if (isBrowser) {
+  if (isBrowser && isIFRAMEWorker)
     activateServiceWorkerForBrowser();
-  }
 
   if (isIFRAMEWorker) bootIFRAMEWorker();
   else if (isBrowser) bootInteractiveApp();
