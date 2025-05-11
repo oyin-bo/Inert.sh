@@ -4,7 +4,7 @@
 (function () {
 
 function boot() {
-  console.log('V0.1');
+  console.log('V0.2');
 
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
   const isIFRAMEWorker = isBrowser && typeof location !== 'undefined' && location?.host?.indexOf('-ifrwrk.') >= 0;
@@ -96,13 +96,13 @@ async function bootInteractiveApp() {
         iframeSrc);
       
       if (iframe.contentWindow)
-        iframe.contentWindow.onmessage = handleIFRAMEMessage;
+        iframe.contentWindow.addEventListener('message', handleIFRAMEMessage);
 
       function handleIFRAMEMessage(e) {
         if (e.data?.tag === initTag) {
           resolve();
           // @ts-ignore
-          iframe.contentWindow.onmessage = null;
+          iframe.contentWindow.removeEventListener('message', handleIFRAMEMessage);
         }
       }
     }
@@ -151,13 +151,13 @@ async function bootInteractiveApp() {
         iframeSrc);
 
       if (iframe.contentWindow)
-        iframe.contentWindow.onmessage = handleIFRAMEMessage;
+        iframe.contentWindow.addEventListener('message', handleIFRAMEMessage);
 
       function handleIFRAMEMessage(e) {
         if (e.data?.tag === executeTag) {
           resolve(e.data);
           // @ts-ignore
-          iframe.contentWindow.onmessage = null;
+          iframe.contentWindow.removeEventListener('message', handleIFRAMEMessage);
         }
       }
     });
