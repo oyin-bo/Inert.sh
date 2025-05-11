@@ -3,7 +3,7 @@
 
 (function () {
 
-var version = '0.14';
+var version = '0.15';
 
 function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
@@ -270,7 +270,7 @@ function responseWithHeaders(response) {
     response.body,
     {
       status: response.status,
-      statusText: response.statusText,
+      statusText: response.statusText + ' + IFRAME service worker',
       headers: newHeaders
     });
   return newResponse;
