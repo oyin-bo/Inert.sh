@@ -360,7 +360,7 @@ async function importAndVerifyPublicKey(publicStr) {
     if (calculatedHash.startsWith(hashString)) return publicKey;
   }
 }
-  
+
 async function handleExecute({ tag, script, origin, signature }, source) {
   if (!tag || !script || !source || !signature) return;
 
@@ -370,29 +370,24 @@ async function handleExecute({ tag, script, origin, signature }, source) {
     { executeStart: { tag } },
     origin);
 
-  (async () => {
+  try {
+    var result;
     try {
-      var result;
-      try {
-        result = await (0, eval)(script);
-      } catch (error) {
-        source.postMessage(
-          {
-            executeError: { tag, error: String(error) }
-          },
-          origin);
-        return;
-      }
-
+      result = await (0, eval)(script);
+    } catch (error) {
       return {
-        executeSuccess: { tag, result: JSON.stringify(result) }
-      };
-    } catch (biggerError) {
-      return {
-        executeError: { tag, error: String(biggerError) }
+        executeError: String(error)
       };
     }
-  })();
+
+    return {
+      executeSuccess: JSON.stringify(result)
+    };
+  } catch (biggerError) {
+    return {
+      executeError: String(biggerError)
+    };
+  }
 }
   
 async function handleFiles({ tag, files, signature }, source) {
@@ -402,7 +397,8 @@ async function handleFiles({ tag, files, signature }, source) {
   await verifySignature(JSON.stringify(files), signature, publicKey);
 
   // TODO: add the counts for successes/failures
-  return { filesApplied: { tag } };
+  // TODO: store the files to use in fetch
+  return { filesApplied: true };
 }
 
 // const HASH_CHAR_LENGTH = 8;
