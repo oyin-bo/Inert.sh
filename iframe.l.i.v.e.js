@@ -3,7 +3,7 @@
 
 (function () {
 
-var version = '0.15';
+var version = '0.16';
 
 function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
@@ -77,6 +77,7 @@ async function bootInteractiveApp() {
   const iframe = document.createElement('iframe');
   const iframeSrc = 'https://' + publicHash + '-ifrwrk.' + location.host;
   iframe.src = iframeSrc;
+  iframe.allow = 'cross-origin-embedder-policy; cross-origin-opener-policy; cross-origin-resource-policy; cross-origin-isolated;';
   iframe.style.cssText = 'width: 20px; height: 20px; border: none; position: absolute; top: -10px; left: -10px; opacity: 0.01; pointer-events: none; z-index: -1;';
 
   /** @type {Promise<void>} */
