@@ -3,7 +3,7 @@
 
 (function () {
 
-var version = '0.9';
+var version = '0.10';
 
 function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
@@ -124,7 +124,6 @@ async function bootInteractiveApp() {
         if (e.key === 'Enter') {
           const value = input.value;
           input.onkeydown = null;
-          document.body.removeChild(input);
           resolve(value);
         }
       };
