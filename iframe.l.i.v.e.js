@@ -3,7 +3,7 @@
 
 (function () {
 
-var version = '0.3';
+var version = '0.4';
 
 function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
@@ -67,7 +67,7 @@ async function bootInteractiveApp() {
   if (!document.body)
     document.documentElement.appendChild(document.createElement('body'));
 
-  printOut('Signing...');
+  printOut('IFRAME Live v' + version + ': Signing...');
   const { publicStr, publicHash, privateKey } = await generateSigningKeyPair();
   printOut('Loading IFRAME worker...');
   const iframe = document.createElement('iframe');
