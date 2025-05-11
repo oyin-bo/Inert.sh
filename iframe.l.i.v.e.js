@@ -63,6 +63,9 @@ async function bootInteractiveApp() {
     else document.body.appendChild(msgEl);
   }
 
+  if (!document.body)
+    document.documentElement.appendChild(document.createElement('body'));
+
   printOut('Signing...');
   const { publicStr, publicHash, privateKey } = await generateSigningKeyPair();
   printOut('Loading IFRAME worker...');
