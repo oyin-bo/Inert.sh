@@ -3,7 +3,7 @@
 
 (function () {
 
-var version = '0.5';
+var version = '0.6';
 
 function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
@@ -279,6 +279,7 @@ var publicKey;
  */
 async function handlePostMessage(e) {
   let result = {};
+  console.log('IFRAME Worker ', e, { data: e.data, origin: e.origin, source: e.source });
 
   if (e.data?.init)
     result = { ...await handleInit(e.data.init) };
@@ -300,12 +301,16 @@ async function handlePostMessage(e) {
     ...await filesPromise
   };
 
+  console.log('IFRAME Worker result', result);
+
   e.source?.postMessage(
     result,
     { targetOrigin: e.origin });
 }
   
 async function handleInit({ publicKey }) {
+  console.log('IFRAME Worker init', { publicKey });
+
   const hashStr = location.hostname.replace(/\-ifrwrk\..+$/, '').toLowerCase();
   const publicKeyObj = await importAndVerifyPublicKey(publicKey, hashStr);
   if (!publicKeyObj) {
