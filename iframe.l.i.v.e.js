@@ -3,12 +3,14 @@
 
 (function () {
 
-function boot() {
-  console.log('V0.2');
+var version = '0.3';
 
+function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
   const isIFRAMEWorker = isBrowser && typeof location !== 'undefined' && location?.host?.indexOf('-ifrwrk.') >= 0;
   const isServiceWorker = typeof self !== 'undefined' && self.constructor?.name === 'ServiceWorkerGlobalScope';
+
+  console.log('IFRAME live v' + version, { isBrowser, isIFRAMEWorker, isServiceWorker });
 
   if (isBrowser && isIFRAMEWorker)
     activateServiceWorkerForBrowser();
