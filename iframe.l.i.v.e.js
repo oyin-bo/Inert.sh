@@ -3,7 +3,7 @@
 
 (function () {
 
-var version = '0.4';
+var version = '0.5';
 
 function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
@@ -96,14 +96,12 @@ async function bootInteractiveApp() {
         },
         iframeSrc);
       
-      if (iframe.contentWindow)
-        iframe.contentWindow.addEventListener('message', handleIFRAMEMessage);
+      window.addEventListener('message', handleIFRAMEMessage);
 
       function handleIFRAMEMessage(e) {
         if (e.data?.tag === initTag) {
           resolve();
-          // @ts-ignore
-          iframe.contentWindow.removeEventListener('message', handleIFRAMEMessage);
+          window.removeEventListener('message', handleIFRAMEMessage);
         }
       }
     }
@@ -151,14 +149,12 @@ async function bootInteractiveApp() {
         },
         iframeSrc);
 
-      if (iframe.contentWindow)
-        iframe.contentWindow.addEventListener('message', handleIFRAMEMessage);
+      window.addEventListener('message', handleIFRAMEMessage);
 
       function handleIFRAMEMessage(e) {
         if (e.data?.tag === executeTag) {
           resolve(e.data);
-          // @ts-ignore
-          iframe.contentWindow.removeEventListener('message', handleIFRAMEMessage);
+          window.removeEventListener('message', handleIFRAMEMessage);
         }
       }
     });
