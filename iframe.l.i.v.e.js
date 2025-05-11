@@ -33,14 +33,137 @@ function bootIFRAMEWorker() {
   window.addEventListener('message', handlePostMessage);
 }
 
-function bootInteractiveApp() {
-  const msg = document.createElement('pre');
-  msg.style.cssText = 'background: tomato; color: white;';
-  msg.textContent = 'UNSUPPORTED: ' + new Date() + ' ' + Math.random();
-  if (!document.body)
-    document.documentElement.appendChild(document.createElement('body'));
+async function bootInteractiveApp() {
+  const HASH_CHAR_LENGTH = 8;
 
-  document.body.appendChild(msg);
+  async function generateSigningKeyPair() {
+    const algorithm = {
+      name: "RSASSA-PKCS1-v1_5",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256",
+    };
+    const keyPair = await crypto.subtle.generateKey(algorithm, true, ["sign", "verify"]);
+
+    const publicKeySpki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+    const publicStr = btoa(String.fromCharCode.apply(null, new Uint8Array(publicKeySpki)));
+
+    const publicKeyDigest = await crypto.subtle.digest('SHA-256', publicKeySpki);
+    const publicHash = [...new Uint8Array(publicKeyDigest)].map(b => b.toString(36)).join('').slice(0, HASH_CHAR_LENGTH);
+
+    return { publicStr, publicHash, privateKey: keyPair.privateKey };
+  }
+
+  var anchorBottom;
+  function printOut(msg) {
+    const msgEl = document.createElement('pre');
+    msgEl.textContent = msg;
+    if (anchorBottom) document.body.insertBefore(msgEl, anchorBottom);
+    else document.body.appendChild(msgEl);
+  }
+
+  printOut('Signing...');
+  const { publicStr, publicHash, privateKey } = await generateSigningKeyPair();
+  printOut('Loading IFRAME worker...');
+  const iframe = document.createElement('iframe');
+  const iframeSrc = 'https://' + publicHash + '-ifrwrk.' + location.host;
+  iframe.src = iframeSrc;
+  iframe.style.cssText = 'width: 20px; height: 20px; border: none; position: absolute; top: -10px; right: -10px; opacity: 0.01; pointer-events: none; z-index: -1;';
+
+  /** @type {Promise<void>} */
+  const frameLoaded = new Promise((resolve) => {
+
+    document.body.appendChild(iframe);
+
+    iframe.onload = frameLoaded;
+
+    function frameLoaded() {
+      iframe.onload = null;
+      printOut('IFRAME channel negotiation...');
+      const initTag = 'INIT' + Date.now();
+      iframe.contentWindow?.postMessage(
+        {
+          tag: initTag,
+          init: {
+            publicKey: publicStr,
+            hash: publicHash
+          }
+        },
+        iframeSrc);
+      
+      if (iframe.contentWindow)
+        iframe.contentWindow.onmessage = handleIFRAMEMessage;
+
+      function handleIFRAMEMessage(e) {
+        if (e.data?.tag === initTag) {
+          resolve();
+          // @ts-ignore
+          iframe.contentWindow.onmessage = null;
+        }
+      }
+    }
+
+  });
+
+  await frameLoaded;
+  printOut('Ready.');
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.style.cssText = 'width: 100%;';
+  document.body.appendChild(input);
+  anchorBottom = input;
+  input.focus();
+
+  while (true) {
+    const inputText = await new Promise((resolve) => {
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          const value = input.value;
+          input.onkeydown = null;
+          document.body.removeChild(input);
+          resolve(value);
+        }
+      };
+    });
+
+    input.value = '';
+
+    const scriptText = document.createElement('pre');
+    scriptText.style.fontWeight = 'bold';
+    scriptText.textContent = '> ' + inputText + '\n...';
+    document.body.insertBefore(scriptText, input);
+
+    const result = await new Promise((resolve) => {
+      const executeTag = 'EXECUTE' + Date.now();
+      iframe.contentWindow?.postMessage(
+        {
+          tag: executeTag,
+          execute: {
+            script: inputText,
+            origin: location.origin
+          }
+        },
+        iframeSrc);
+
+      if (iframe.contentWindow)
+        iframe.contentWindow.onmessage = handleIFRAMEMessage;
+
+      function handleIFRAMEMessage(e) {
+        if (e.data?.tag === executeTag) {
+          resolve(e.data);
+          // @ts-ignore
+          iframe.contentWindow.onmessage = null;
+        }
+      }
+    });
+
+    scriptText.textContent = '> ' + inputText;
+
+    printOut(JSON.stringify(result, null, 2));
+
+  }
+
 }
 
 function activateServiceWorkerForBrowser() {
@@ -58,8 +181,8 @@ function activateServiceWorkerForBrowser() {
   }
 }
 
-function bootServiceWorker() {
 
+function bootServiceWorker() {
   /** @type {ServiceWorkerGlobalScope} */(/** @type {*} */(self)).addEventListener(
   'fetch',
   handleFetch);
