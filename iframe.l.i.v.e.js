@@ -365,7 +365,7 @@ async function importAndVerifyPublicKey(publicStr) {
 async function handleExecute({ tag, script, origin, signature }, source) {
   if (!tag || !script || !source || !signature) return;
 
-  await verifySignature(script, signature, publicKey);
+  verifySignature(script, signature, publicKey);
 
   source.postMessage(
     { executeStart: { tag } },
