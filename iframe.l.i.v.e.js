@@ -213,6 +213,8 @@ function handleFetch(event) {
           cached));
         return;
       }
+
+      // TODO: communicate back to the parent and request the file
       break;
 
     case 'PUT':
