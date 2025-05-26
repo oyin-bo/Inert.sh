@@ -3,7 +3,7 @@
 
 (function () {
 
-var version = '0.16';
+var version = '0.18';
 
 function boot() {
   const isBrowser = typeof window !== 'undefined' && window?.document && typeof window.document.createElement === 'function';
