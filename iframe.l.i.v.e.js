@@ -1,16 +1,10 @@
 // @ts-check
 /// <reference lib="WebWorker" />
 
-const globals =
-  typeof globalThis !== 'undefined' ? globalThis :
-    typeof self !== 'undefined' ? self :
-      typeof window !== 'undefined' ? window :
-        this;
-
-
 (function () {
   function iframeLIVE(environment) {
-    var version = '0.19';
+    var version = '0.21';
+    const HASH_CHAR_LENGTH = 8;
 
     const globals =
       typeof globalThis !== 'undefined' ? globalThis :
@@ -19,11 +13,11 @@ const globals =
             this;
 
     function boot() {
-      const isBrowser = typeof globals.window.document.createElement === 'function';
-      const isIFRAMEWorker = isBrowser && Number(typeof globals.location?.host?.indexOf('-ifrwrk.')) >= 0;
-      const isServiceWorker = globals.self.constructor?.name === 'ServiceWorkerGlobalScope';
+      const isBrowser = typeof globals.window?.document?.createElement === 'function';
+      const isIFRAMEWorker = isBrowser && globals.location?.host?.indexOf('-ifrwrk.') >= 0;
+      const isServiceWorker = globals.self?.constructor?.name === 'ServiceWorkerGlobalScope';
 
-      globals.console.log('IFRAME live v' + version, { isBrowser, isIFRAMEWorker, isServiceWorker });
+      globals.console.log('IFRAME live v' + version, { isBrowser, isIFRAMEWorker, isServiceWorker, globals });
 
       if (isBrowser && isIFRAMEWorker)
         activateServiceWorkerForBrowser();
@@ -49,7 +43,6 @@ const globals =
     }
 
     async function bootInteractiveApp() {
-      const HASH_CHAR_LENGTH = 8;
 
       var anchorBottom;
       function printOut(msg) {
