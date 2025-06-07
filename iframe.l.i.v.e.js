@@ -3,10 +3,10 @@
 
 (function () {
   function iframeLIVE() {
-    var version = '0.22';
+    var version = '0.23';
     const HASH_CHAR_LENGTH = 8;
 
-    const globals =
+    let globals =
       typeof globalThis !== 'undefined' ? globalThis :
         typeof self !== 'undefined' ? self :
           typeof window !== 'undefined' ? window :
@@ -427,8 +427,13 @@
         verifySignature,
         importAndVerifyPublicKey,
         handleExecute,
-        handleFiles
+        handleFiles,
+        overrideGlobals
       });
+
+      function overrideGlobals(newGlobals) {
+        globals = newGlobals;
+      }
 
       return;
     }
