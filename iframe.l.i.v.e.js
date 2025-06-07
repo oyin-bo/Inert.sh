@@ -2,8 +2,8 @@
 /// <reference lib="WebWorker" />
 
 (function () {
-  function iframeLIVE(environment) {
-    var version = '0.21';
+  function iframeLIVE() {
+    var version = '0.22';
     const HASH_CHAR_LENGTH = 8;
 
     const globals =
@@ -12,10 +12,12 @@
           typeof window !== 'undefined' ? window :
             this;
 
+    const isBrowser = typeof globals.window?.document?.createElement === 'function';
+    const isIFRAMEWorker = isBrowser && globals.location?.host?.indexOf('-ifrwrk.') >= 0;
+    const isServiceWorker = globals.self?.constructor?.name === 'ServiceWorkerGlobalScope';
+    const isTest = typeof module !== 'undefined' && module.exports && typeof require === 'function';
+
     function boot() {
-      const isBrowser = typeof globals.window?.document?.createElement === 'function';
-      const isIFRAMEWorker = isBrowser && globals.location?.host?.indexOf('-ifrwrk.') >= 0;
-      const isServiceWorker = globals.self?.constructor?.name === 'ServiceWorkerGlobalScope';
 
       globals.console.log('IFRAME live v' + version, { isBrowser, isIFRAMEWorker, isServiceWorker, globals });
 
@@ -409,46 +411,7 @@
       return { filesApplied: true };
     }
 
-    // const HASH_CHAR_LENGTH = 8;
-
-    // async function generateSigningKeyPair() {
-    //   const algorithm = {
-    //     name: "RSASSA-PKCS1-v1_5",
-    //     modulusLength: 2048,
-    //     publicExponent: new Uint8Array([1, 0, 1]),
-    //     hash: "SHA-256",
-    //   };
-    //   const keyPair = await crypto.subtle.generateKey(algorithm, true, ["sign", "verify"]);
-
-    //   const publicKeySpki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
-    //   const publicStr = btoa(String.fromCharCode.apply(null, new Uint8Array(publicKeySpki)));
-
-    //   const publicKeyDigest = await crypto.subtle.digest('SHA-256', publicKeySpki);
-    //   const publicHash = [...new Uint8Array(publicKeyDigest)].map(b => b.toString(36)).join('').slice(0, HASH_CHAR_LENGTH);
-
-    //   return { publicStr, publicHash, privateKey: keyPair.privateKey };
-    // }
-
-    // async function signData(privateKey, str) {
-    //   return crypto.subtle.sign({ name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, privateKey, new TextEncoder().encode(str));
-    // }
-
-    // async function importAndVerifyPublicKey(publicStr, hashString) {
-    //   const publicKeyBuffer = Uint8Array.from(atob(publicStr), c => c.charCodeAt(0)).buffer;
-    //   const algorithm = {
-    //     name: "RSASSA-PKCS1-v1_5",
-    //     hash: "SHA-256",
-    //   };
-    //   const publicKey = await crypto.subtle.importKey('spki', publicKeyBuffer, algorithm, true, ['verify']);
-
-    // }
-
-    // async function verifySignature(publicKey, signature, str) {
-    //   const dataBuffer = new TextEncoder().encode(str);
-    //   return crypto.subtle.verify({ name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, publicKey, signature, dataBuffer);
-    // }
-
-    if (environment === 'test') {
+    if (isTest) {
       Object.assign(module.exports, {
         boot,
         bootIFRAMEWorker,
@@ -466,6 +429,8 @@
         handleExecute,
         handleFiles
       });
+
+      return;
     }
 
     boot();
